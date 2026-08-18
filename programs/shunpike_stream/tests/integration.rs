@@ -170,6 +170,10 @@ fn send(
     payer: &Keypair,
     extra_signers: &[&Keypair],
 ) -> Result<(), TransactionError> {
+    // Rotate the blockhash on every send: repeated identical instructions
+    // (withdraw-again, double-pause probes…) would otherwise produce the same
+    // signature and bounce off the dedup cache as AlreadyProcessed.
+    svm.expire_blockhash();
     let mut signers: Vec<&Keypair> = vec![payer];
     signers.extend_from_slice(extra_signers);
     let tx = Transaction::new_signed_with_payer(
@@ -419,10 +423,10 @@ fn rotate_admin_hands_over_power_and_rejects_default_pubkey() {
     // Old admin's force_settle is dead; new admin's works.
     warp_to(&mut ctx.svm, T0 + 500);
     assert_stream_err(
-        send(&mut ctx.svm, &[force_settle_ix(&ctx, 1, &admin_a.pubkey())], &admin_a, &[]),
+        { let __ix = force_settle_ix(&ctx, 1, &admin_a.pubkey()); send(&mut ctx.svm, &[__ix], &admin_a, &[]) },
         StreamError::Unauthorized,
     );
-    send(&mut ctx.svm, &[force_settle_ix(&ctx, 1, &admin_b.pubkey())], &admin_b, &[]).unwrap();
+    { let __ix = force_settle_ix(&ctx, 1, &admin_b.pubkey()); send(&mut ctx.svm, &[__ix], &admin_b, &[]) }.unwrap();
 }
 
 // ---------------------------------------------------------------------------
@@ -491,7 +495,7 @@ fn withdraw_pays_linear_accrual_and_creates_recipient_ata() {
 
     // TS vector: at 50% elapsed, half the deposit is withdrawable.
     warp_to(&mut ctx.svm, T0 + 500);
-    send(&mut ctx.svm, &[withdraw_ix(&ctx, 1, &recipient.pubkey())], &recipient, &[]).unwrap();
+    { let __ix = withdraw_ix(&ctx, 1, &recipient.pubkey()); send(&mut ctx.svm, &[__ix], &recipient, &[]) }.unwrap();
     assert_eq!(token_balance(&ctx.svm, &ctx.recipient_ata), DEPOSIT / 2);
 
     let s = read_stream(&ctx.svm, &stream_pda(&ctx.funder.pubkey(), 1));
@@ -500,13 +504,13 @@ fn withdraw_pays_linear_accrual_and_creates_recipient_ata() {
     // Immediately again with no time passed: nothing left to withdraw.
     ctx.svm.expire_blockhash();
     assert_stream_err(
-        send(&mut ctx.svm, &[withdraw_ix(&ctx, 1, &recipient.pubkey())], &recipient, &[]),
+        { let __ix = withdraw_ix(&ctx, 1, &recipient.pubkey()); send(&mut ctx.svm, &[__ix], &recipient, &[]) },
         StreamError::NothingToWithdraw,
     );
 
     // After end: the remainder lands and totals are exact.
     warp_to(&mut ctx.svm, T0 + DURATION + 5);
-    send(&mut ctx.svm, &[withdraw_ix(&ctx, 1, &recipient.pubkey())], &recipient, &[]).unwrap();
+    { let __ix = withdraw_ix(&ctx, 1, &recipient.pubkey()); send(&mut ctx.svm, &[__ix], &recipient, &[]) }.unwrap();
     assert_eq!(token_balance(&ctx.svm, &ctx.recipient_ata), DEPOSIT);
 }
 
@@ -519,13 +523,13 @@ fn withdraw_rejects_everyone_but_the_current_recipient() {
     // The funder cannot pull the recipient's side.
     let funder = ctx.funder.insecure_clone();
     assert_stream_err(
-        send(&mut ctx.svm, &[withdraw_ix(&ctx, 1, &funder.pubkey())], &funder, &[]),
+        { let __ix = withdraw_ix(&ctx, 1, &funder.pubkey()); send(&mut ctx.svm, &[__ix], &funder, &[]) },
         StreamError::Unauthorized,
     );
     // Nor can a stranger.
     let outsider = ctx.outsider.insecure_clone();
     assert_stream_err(
-        send(&mut ctx.svm, &[withdraw_ix(&ctx, 1, &outsider.pubkey())], &outsider, &[]),
+        { let __ix = withdraw_ix(&ctx, 1, &outsider.pubkey()); send(&mut ctx.svm, &[__ix], &outsider, &[]) },
         StreamError::Unauthorized,
     );
 }
@@ -539,13 +543,13 @@ fn scheduled_stream_pays_nothing_before_start() {
 
     let recipient = ctx.recipient.insecure_clone();
     assert_stream_err(
-        send(&mut ctx.svm, &[withdraw_ix(&ctx, 1, &recipient.pubkey())], &recipient, &[]),
+        { let __ix = withdraw_ix(&ctx, 1, &recipient.pubkey()); send(&mut ctx.svm, &[__ix], &recipient, &[]) },
         StreamError::NothingToWithdraw,
     );
 
     // Cancelling a scheduled stream refunds the entire deposit to the funder.
     let before = token_balance(&ctx.svm, &ctx.funder_ata);
-    send(&mut ctx.svm, &[cancel_ix(&ctx, 1)], &funder, &[]).unwrap();
+    { let __ix = cancel_ix(&ctx, 1); send(&mut ctx.svm, &[__ix], &funder, &[]) }.unwrap();
     assert_eq!(token_balance(&ctx.svm, &ctx.funder_ata), before + DEPOSIT);
     assert_eq!(token_balance(&ctx.svm, &ctx.recipient_ata), 0);
 }
@@ -563,16 +567,16 @@ fn pause_freezes_and_resume_extends_end_time() {
 
     // Pause at 40%.
     warp_to(&mut ctx.svm, T0 + 400);
-    send(&mut ctx.svm, &[control_ix(&ctx, 1, &funder.pubkey(), ixs::Pause {}.data())], &funder, &[]).unwrap();
+    { let __ix = control_ix(&ctx, 1, &funder.pubkey(), ixs::Pause {}.data()); send(&mut ctx.svm, &[__ix], &funder, &[]) }.unwrap();
 
     // 300s later, accrual is still frozen at 40%.
     warp_to(&mut ctx.svm, T0 + 700);
-    send(&mut ctx.svm, &[withdraw_ix(&ctx, 1, &recipient.pubkey())], &recipient, &[]).unwrap();
+    { let __ix = withdraw_ix(&ctx, 1, &recipient.pubkey()); send(&mut ctx.svm, &[__ix], &recipient, &[]) }.unwrap();
     assert_eq!(token_balance(&ctx.svm, &ctx.recipient_ata), 40_000_000);
 
     // Resume: end_time extends by exactly the 300s pause — the stream can
     // never have "ended while paused".
-    send(&mut ctx.svm, &[control_ix(&ctx, 1, &funder.pubkey(), ixs::Resume {}.data())], &funder, &[]).unwrap();
+    { let __ix = control_ix(&ctx, 1, &funder.pubkey(), ixs::Resume {}.data()); send(&mut ctx.svm, &[__ix], &funder, &[]) }.unwrap();
     let s = read_stream(&ctx.svm, &stream_pda(&funder.pubkey(), 1));
     assert_eq!(s.end_time, T0 + DURATION + 300);
     assert_eq!(s.paused_total, 300);
@@ -580,12 +584,12 @@ fn pause_freezes_and_resume_extends_end_time() {
 
     // At the ORIGINAL end time the stream is still running (70% accrued).
     warp_to(&mut ctx.svm, T0 + 1_000);
-    send(&mut ctx.svm, &[withdraw_ix(&ctx, 1, &recipient.pubkey())], &recipient, &[]).unwrap();
+    { let __ix = withdraw_ix(&ctx, 1, &recipient.pubkey()); send(&mut ctx.svm, &[__ix], &recipient, &[]) }.unwrap();
     assert_eq!(token_balance(&ctx.svm, &ctx.recipient_ata), 70_000_000);
 
     // At the extended end everything has streamed, to the atom.
     warp_to(&mut ctx.svm, T0 + 1_300);
-    send(&mut ctx.svm, &[withdraw_ix(&ctx, 1, &recipient.pubkey())], &recipient, &[]).unwrap();
+    { let __ix = withdraw_ix(&ctx, 1, &recipient.pubkey()); send(&mut ctx.svm, &[__ix], &recipient, &[]) }.unwrap();
     assert_eq!(token_balance(&ctx.svm, &ctx.recipient_ata), DEPOSIT);
 }
 
@@ -599,21 +603,21 @@ fn pause_resume_timing_abuse_is_rejected() {
     // Scheduled stream: pausing before start is meaningless and rejected.
     let ix = create_stream_ix(&ctx, 1, DEPOSIT, T0 + 5_000, DURATION, "x", ctx.recipient.pubkey());
     send(&mut ctx.svm, &[ix], &funder, &[]).unwrap();
-    assert_stream_err(send(&mut ctx.svm, &[pause(&ctx)], &funder, &[]), StreamError::NotStarted);
+    assert_stream_err({ let __ix = pause(&ctx); send(&mut ctx.svm, &[__ix], &funder, &[]) }, StreamError::NotStarted);
 
     // Resume while running is rejected.
     warp_to(&mut ctx.svm, T0 + 5_100);
-    assert_stream_err(send(&mut ctx.svm, &[resume(&ctx)], &funder, &[]), StreamError::NotPaused);
+    assert_stream_err({ let __ix = resume(&ctx); send(&mut ctx.svm, &[__ix], &funder, &[]) }, StreamError::NotPaused);
 
     // Double pause is rejected.
-    send(&mut ctx.svm, &[pause(&ctx)], &funder, &[]).unwrap();
+    { let __ix = pause(&ctx); send(&mut ctx.svm, &[__ix], &funder, &[]) }.unwrap();
     ctx.svm.expire_blockhash();
-    assert_stream_err(send(&mut ctx.svm, &[pause(&ctx)], &funder, &[]), StreamError::AlreadyPaused);
-    send(&mut ctx.svm, &[resume(&ctx)], &funder, &[]).unwrap();
+    assert_stream_err({ let __ix = pause(&ctx); send(&mut ctx.svm, &[__ix], &funder, &[]) }, StreamError::AlreadyPaused);
+    { let __ix = resume(&ctx); send(&mut ctx.svm, &[__ix], &funder, &[]) }.unwrap();
 
     // Pause after the (extended) end is rejected: the stream is complete.
     warp_to(&mut ctx.svm, T0 + 5_000 + DURATION + 200);
-    assert_stream_err(send(&mut ctx.svm, &[pause(&ctx)], &funder, &[]), StreamError::AlreadyEnded);
+    assert_stream_err({ let __ix = pause(&ctx); send(&mut ctx.svm, &[__ix], &funder, &[]) }, StreamError::AlreadyEnded);
 }
 
 #[test]
@@ -629,7 +633,7 @@ fn controls_reject_non_funder_signers() {
         ixs::ChangeRecipient { new_recipient: recipient.pubkey() }.data(),
     ] {
         assert_stream_err(
-            send(&mut ctx.svm, &[control_ix(&ctx, 1, &recipient.pubkey(), data)], &recipient, &[]),
+            { let __ix = control_ix(&ctx, 1, &recipient.pubkey(), data); send(&mut ctx.svm, &[__ix], &recipient, &[]) },
             StreamError::Unauthorized,
         );
     }
@@ -653,11 +657,11 @@ fn change_recipient_locks_out_old_and_pays_new() {
 
     // The old wallet is locked out...
     assert_stream_err(
-        send(&mut ctx.svm, &[withdraw_ix(&ctx, 1, &old.pubkey())], &old, &[]),
+        { let __ix = withdraw_ix(&ctx, 1, &old.pubkey()); send(&mut ctx.svm, &[__ix], &old, &[]) },
         StreamError::Unauthorized,
     );
     // ...and the new wallet withdraws the accrued half.
-    send(&mut ctx.svm, &[withdraw_ix(&ctx, 1, &new.pubkey())], &new, &[]).unwrap();
+    { let __ix = withdraw_ix(&ctx, 1, &new.pubkey()); send(&mut ctx.svm, &[__ix], &new, &[]) }.unwrap();
     let new_ata = get_associated_token_address(&new.pubkey(), &ctx.mint);
     assert_eq!(token_balance(&ctx.svm, &new_ata), DEPOSIT / 2);
 
@@ -691,7 +695,7 @@ fn cancel_settles_both_sides_and_refunds_all_rent() {
 
     // 30% in, with 10% already withdrawn.
     warp_to(&mut ctx.svm, T0 + 100);
-    send(&mut ctx.svm, &[withdraw_ix(&ctx, 1, &recipient.pubkey())], &recipient, &[]).unwrap();
+    { let __ix = withdraw_ix(&ctx, 1, &recipient.pubkey()); send(&mut ctx.svm, &[__ix], &recipient, &[]) }.unwrap();
     assert_eq!(token_balance(&ctx.svm, &ctx.recipient_ata), 10_000_000);
     warp_to(&mut ctx.svm, T0 + 300);
 
@@ -700,7 +704,7 @@ fn cancel_settles_both_sides_and_refunds_all_rent() {
     let funder_sol_before = lamports(&ctx.svm, &funder.pubkey());
     let funder_tokens_before = token_balance(&ctx.svm, &ctx.funder_ata);
 
-    send(&mut ctx.svm, &[cancel_ix(&ctx, 1)], &funder, &[]).unwrap();
+    { let __ix = cancel_ix(&ctx, 1); send(&mut ctx.svm, &[__ix], &funder, &[]) }.unwrap();
 
     // Token legs: recipient tops up to the 30% accrued; funder gets the 70%.
     assert_eq!(token_balance(&ctx.svm, &ctx.recipient_ata), 30_000_000);
@@ -719,8 +723,8 @@ fn cancel_settles_both_sides_and_refunds_all_rent() {
 
     // Terminal: a second cancel and a post-cancel withdraw both fail.
     ctx.svm.expire_blockhash();
-    assert!(send(&mut ctx.svm, &[cancel_ix(&ctx, 1)], &funder, &[]).is_err());
-    assert!(send(&mut ctx.svm, &[withdraw_ix(&ctx, 1, &recipient.pubkey())], &recipient, &[]).is_err());
+    assert!({ let __ix = cancel_ix(&ctx, 1); send(&mut ctx.svm, &[__ix], &funder, &[]) }.is_err());
+    assert!({ let __ix = withdraw_ix(&ctx, 1, &recipient.pubkey()); send(&mut ctx.svm, &[__ix], &recipient, &[]) }.is_err());
 }
 
 #[test]
@@ -732,7 +736,7 @@ fn cancel_after_end_pays_recipient_everything() {
 
     // No "already ended" trap here — cancel doubles as final settlement.
     warp_to(&mut ctx.svm, T0 + DURATION + 999);
-    send(&mut ctx.svm, &[cancel_ix(&ctx, 1)], &funder, &[]).unwrap();
+    { let __ix = cancel_ix(&ctx, 1); send(&mut ctx.svm, &[__ix], &funder, &[]) }.unwrap();
     assert_eq!(token_balance(&ctx.svm, &ctx.recipient_ata), DEPOSIT);
     assert_eq!(token_balance(&ctx.svm, &ctx.funder_ata), funder_tokens_before);
 }
@@ -785,25 +789,25 @@ fn close_reclaims_rent_after_full_playout_and_rejects_early_calls() {
     // Mid-stream: close is refused (cancel is the mid-stream exit).
     warp_to(&mut ctx.svm, T0 + 500);
     assert_stream_err(
-        send(&mut ctx.svm, &[close_ix(&ctx, 1, &outsider.pubkey())], &outsider, &[]),
+        { let __ix = close_ix(&ctx, 1, &outsider.pubkey()); send(&mut ctx.svm, &[__ix], &outsider, &[]) },
         StreamError::NotSettled,
     );
 
     // Ended but not fully withdrawn: still refused.
     warp_to(&mut ctx.svm, T0 + DURATION + 1);
     assert_stream_err(
-        send(&mut ctx.svm, &[close_ix(&ctx, 1, &outsider.pubkey())], &outsider, &[]),
+        { let __ix = close_ix(&ctx, 1, &outsider.pubkey()); send(&mut ctx.svm, &[__ix], &outsider, &[]) },
         StreamError::NotSettled,
     );
 
     // Recipient drains, then ANYONE may close — rent still goes to the funder,
     // who did not sign, so the refund is exact (no fee deduction).
-    send(&mut ctx.svm, &[withdraw_ix(&ctx, 1, &recipient.pubkey())], &recipient, &[]).unwrap();
+    { let __ix = withdraw_ix(&ctx, 1, &recipient.pubkey()); send(&mut ctx.svm, &[__ix], &recipient, &[]) }.unwrap();
     let stream_rent = lamports(&ctx.svm, &stream_pk);
     let vault_rent = lamports(&ctx.svm, &vault);
     let funder_before = lamports(&ctx.svm, &funder.pubkey());
 
-    send(&mut ctx.svm, &[close_ix(&ctx, 1, &outsider.pubkey())], &outsider, &[]).unwrap();
+    { let __ix = close_ix(&ctx, 1, &outsider.pubkey()); send(&mut ctx.svm, &[__ix], &outsider, &[]) }.unwrap();
     assert_eq!(
         lamports(&ctx.svm, &funder.pubkey()),
         funder_before + stream_rent + vault_rent
@@ -811,7 +815,7 @@ fn close_reclaims_rent_after_full_playout_and_rejects_early_calls() {
 
     // Double close fails: the accounts no longer exist.
     ctx.svm.expire_blockhash();
-    assert!(send(&mut ctx.svm, &[close_ix(&ctx, 1, &outsider.pubkey())], &outsider, &[]).is_err());
+    assert!({ let __ix = close_ix(&ctx, 1, &outsider.pubkey()); send(&mut ctx.svm, &[__ix], &outsider, &[]) }.is_err());
 }
 
 // ---------------------------------------------------------------------------
@@ -838,7 +842,7 @@ fn force_settle_matches_cancel_math_and_pays_only_the_two_parties() {
     let recipient_ata_rent =
         Rent::default().minimum_balance(spl_token::state::Account::LEN);
 
-    send(&mut ctx.svm, &[force_settle_ix(&ctx, 1, &admin.pubkey())], &admin, &[]).unwrap();
+    { let __ix = force_settle_ix(&ctx, 1, &admin.pubkey()); send(&mut ctx.svm, &[__ix], &admin, &[]) }.unwrap();
 
     // Exactly cancel's split at 25%: recipient 25, funder 75.
     assert_eq!(token_balance(&ctx.svm, &ctx.recipient_ata), 25_000_000);
@@ -866,14 +870,14 @@ fn force_settle_rejects_non_admin_and_missing_config() {
     let outsider = ctx.outsider.insecure_clone();
 
     // No config account at all: the config account check fails.
-    assert!(send(&mut ctx.svm, &[force_settle_ix(&ctx, 1, &outsider.pubkey())], &outsider, &[]).is_err());
+    assert!({ let __ix = force_settle_ix(&ctx, 1, &outsider.pubkey()); send(&mut ctx.svm, &[__ix], &outsider, &[]) }.is_err());
 
     // Config exists but the signer isn't the admin.
     let admin = Keypair::new();
     install_config(&mut ctx.svm, &admin.pubkey());
     ctx.svm.expire_blockhash();
     assert_stream_err(
-        send(&mut ctx.svm, &[force_settle_ix(&ctx, 1, &outsider.pubkey())], &outsider, &[]),
+        { let __ix = force_settle_ix(&ctx, 1, &outsider.pubkey()); send(&mut ctx.svm, &[__ix], &outsider, &[]) },
         StreamError::Unauthorized,
     );
 }
@@ -897,14 +901,14 @@ fn awkward_numbers_settle_with_zero_dust() {
 
     // Withdraw at an awkward instant (floor division leaves dust in the vault).
     warp_to(&mut ctx.svm, T0 + 313);
-    send(&mut ctx.svm, &[withdraw_ix(&ctx, 1, &recipient.pubkey())], &recipient, &[]).unwrap();
+    { let __ix = withdraw_ix(&ctx, 1, &recipient.pubkey()); send(&mut ctx.svm, &[__ix], &recipient, &[]) }.unwrap();
     let withdrawn_mid = token_balance(&ctx.svm, &ctx.recipient_ata);
     assert_eq!(withdrawn_mid, ((odd_deposit as u128) * 313 / 997) as u64);
 
     // Cancel at another awkward instant: recipient tops up to accrued, funder
     // gets the remainder, and the two legs account for EVERY atom.
     warp_to(&mut ctx.svm, T0 + 641);
-    send(&mut ctx.svm, &[cancel_ix(&ctx, 1)], &funder, &[]).unwrap();
+    { let __ix = cancel_ix(&ctx, 1); send(&mut ctx.svm, &[__ix], &funder, &[]) }.unwrap();
 
     let accrued_at_cancel = ((odd_deposit as u128) * 641 / 997) as u64;
     assert_eq!(token_balance(&ctx.svm, &ctx.recipient_ata), accrued_at_cancel);
@@ -935,18 +939,18 @@ fn full_playout_with_pause_pays_every_atom() {
 
     // Pause 111s in, resume 250s later — end extends to T0 + 997 + 250.
     warp_to(&mut ctx.svm, T0 + 111);
-    send(&mut ctx.svm, &[control_ix(&ctx, 1, &funder.pubkey(), ixs::Pause {}.data())], &funder, &[]).unwrap();
+    { let __ix = control_ix(&ctx, 1, &funder.pubkey(), ixs::Pause {}.data()); send(&mut ctx.svm, &[__ix], &funder, &[]) }.unwrap();
     warp_to(&mut ctx.svm, T0 + 361);
-    send(&mut ctx.svm, &[control_ix(&ctx, 1, &funder.pubkey(), ixs::Resume {}.data())], &funder, &[]).unwrap();
+    { let __ix = control_ix(&ctx, 1, &funder.pubkey(), ixs::Resume {}.data()); send(&mut ctx.svm, &[__ix], &funder, &[]) }.unwrap();
 
     // Past the extended end: a single withdraw pays the full deposit exactly.
     warp_to(&mut ctx.svm, T0 + 997 + 250 + 1);
-    send(&mut ctx.svm, &[withdraw_ix(&ctx, 1, &recipient.pubkey())], &recipient, &[]).unwrap();
+    { let __ix = withdraw_ix(&ctx, 1, &recipient.pubkey()); send(&mut ctx.svm, &[__ix], &recipient, &[]) }.unwrap();
     assert_eq!(token_balance(&ctx.svm, &ctx.recipient_ata), odd_deposit);
 
     // And close reclaims the rent — the stream leaves zero residue on chain.
     let outsider = ctx.outsider.insecure_clone();
-    send(&mut ctx.svm, &[close_ix(&ctx, 1, &outsider.pubkey())], &outsider, &[]).unwrap();
+    { let __ix = close_ix(&ctx, 1, &outsider.pubkey()); send(&mut ctx.svm, &[__ix], &outsider, &[]) }.unwrap();
     let stream_pk = stream_pda(&funder.pubkey(), 1);
     assert!(ctx.svm.get_account(&stream_pk).is_none_or(|a| a.lamports == 0));
 }

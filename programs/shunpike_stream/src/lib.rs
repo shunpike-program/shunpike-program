@@ -33,7 +33,7 @@ use instructions::*;
 
 // Placeholder until `anchor keys sync` after the deploy keypair is generated
 // (kept in lock-step with Anchor.toml).
-declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
+declare_id!("GooHiyMEYnVAUkajiAc33fA9rQjF5K8ZvFojHNzhrShg");
 
 #[program]
 pub mod shunpike_stream {

@@ -9,10 +9,10 @@ skip-lint = false
 # generated (P3). The same id is declared in programs/shunpike_stream/src/lib.rs —
 # keys sync rewrites both together.
 [programs.localnet]
-shunpike_stream = "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
+shunpike_stream = "GooHiyMEYnVAUkajiAc33fA9rQjF5K8ZvFojHNzhrShg"
 
 [programs.devnet]
-shunpike_stream = "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
+shunpike_stream = "GooHiyMEYnVAUkajiAc33fA9rQjF5K8ZvFojHNzhrShg"
 
 [registry]
 url = "https://api.apr.dev"
