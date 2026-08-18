@@ -6,17 +6,18 @@ failure case. Nothing here asks you to trust us. Every claim points at
 something you can check yourself: the source in this repository, the deployed
 bytecode, or an account on chain.
 
-> **Status note:** the program is pre-deployment. Addresses marked TBD are
-> filled in at mainnet deploy, before any user is invited.
+> **Status note:** deployed and end-to-end verified on devnet (2026-08-18);
+> mainnet deploy pending. The addresses below are final — program ids and
+> PDAs are identical on both clusters because we deploy with the same keypair.
 
 ## The addresses
 
 | What | Address |
 | --- | --- |
-| Program id | TBD at deploy |
-| Global config PDA | TBD at deploy (derived: seed `"config"`) |
+| Program id | `GooHiyMEYnVAUkajiAc33fA9rQjF5K8ZvFojHNzhrShg` |
+| Global config PDA | `Bke4WmWnJwmHMJCBA2iDDCfnB77LQBGrdXjG97gr9Kt8` (derived: seed `"config"`) |
 | Current admin | `4Fb83Vku87dadiqdCED1We8tdzk61oLx6yoTfMhYm8cW` (genesis; see below) |
-| Deployer | TBD at deploy |
+| Deployer | `DXjgtYT3mYBRQedKV7YN7hN3WLHqwadEFKWbJRNMcKzX` |
 
 Tools to check with: [Solscan](https://solscan.io) and
 [Solana Explorer](https://explorer.solana.com) (both show the verified-build
