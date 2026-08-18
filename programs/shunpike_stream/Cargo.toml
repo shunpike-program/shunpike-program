@@ -1,0 +1,37 @@
+[package]
+name = "shunpike-stream"
+version = "0.1.0"
+description = "Shunpike streaming-payroll program: no fee machinery, refundable rent, narrow disclosed admin power"
+edition = "2021"
+license = "MIT"
+repository = "https://github.com/dkbutler/shunpike-program"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "shunpike_stream"
+
+[features]
+default = []
+cpi = ["no-entrypoint"]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+idl-build = ["anchor-lang/idl-build", "anchor-spl/idl-build"]
+
+[dependencies]
+# init-if-needed: recipient/funder token accounts are created on the fly at
+# withdraw/settle time (a recipient may never have held the mint; a funder may
+# have closed their ATA before a refund lands). Each use-site is a plain ATA
+# derived from (owner, mint), so the known re-initialization attack surface of
+# init_if_needed does not apply (ATAs are idempotent by construction).
+anchor-lang = { version = "0.31.1", features = ["init-if-needed"] }
+anchor-spl = "0.31.1"
+
+[dev-dependencies]
+# LiteSVM integration suite loads the compiled .so from target/deploy — run
+# `anchor build` before `cargo test`. Versions here must track the solana-sdk
+# major that litesvm links against.
+litesvm = "0.6"
+solana-sdk = "2.2"
+spl-token = "7"
+spl-associated-token-account = "6"

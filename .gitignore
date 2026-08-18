@@ -1,0 +1,8 @@
+target/
+.anchor/
+node_modules/
+test-ledger/
+.DS_Store
+# Deploy keypairs never enter git — the program keypair is the deploy identity.
+*-keypair.json
+.claude/settings.local.json
