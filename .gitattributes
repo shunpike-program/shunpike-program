@@ -1,0 +1,3 @@
+# This repo is edited on Windows but built inside WSL2 — CRLF in shell
+# scripts (or anywhere) breaks the Linux toolchain. Everything stays LF.
+* text=auto eol=lf
