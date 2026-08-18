@@ -1,0 +1,42 @@
+# Deterministic (verifiable) build of shunpike_stream, run on GitHub's public
+# infrastructure so anyone can watch the hash get produced from this source.
+#
+# solana-verify wraps the build in the standard Solana verification Docker
+# image — same image OtterSec's verification API uses — so the output binary
+# is byte-identical wherever it runs. The artifact this produces is what gets
+# deployed on-chain; the explorer "verified build" badge is the hash match
+# between that deployment and what this workflow (or anyone locally) rebuilds.
+name: verified-build
+
+on:
+  workflow_dispatch: {}
+  push:
+    branches: [master]
+    paths:
+      - "programs/**"
+      - "Cargo.*"
+      - "Anchor.toml"
+      - ".github/workflows/verified-build.yml"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install solana-verify
+        run: cargo install solana-verify --locked
+
+      - name: Deterministic build (dockerized)
+        run: solana-verify build
+
+      - name: Executable hash
+        run: |
+          echo "== deterministic executable hash =="
+          solana-verify get-executable-hash target/deploy/shunpike_stream.so
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: shunpike_stream-verified
+          path: target/deploy/shunpike_stream.so
