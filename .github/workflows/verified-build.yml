@@ -28,7 +28,11 @@ jobs:
         run: cargo install solana-verify --locked
 
       - name: Deterministic build (dockerized)
-        run: solana-verify build
+        # Base image pinned: determinism means EVERY rebuild — ours, a
+        # skeptic's, OtterSec's — must use this exact toolchain. The default
+        # image's Cargo (1.84) predates edition2024, which our locked deps
+        # require; 4.0.3 is the newest published verifier image.
+        run: solana-verify build --base-image solanafoundation/solana-verifiable-build:4.0.3
 
       - name: Executable hash
         run: |
