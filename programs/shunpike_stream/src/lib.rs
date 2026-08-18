@@ -31,8 +31,8 @@ pub mod state;
 
 use instructions::*;
 
-// Placeholder until `anchor keys sync` after the deploy keypair is generated
-// (kept in lock-step with Anchor.toml).
+// The deployed program id (deploy keypair generated at first cargo-build-sbf;
+// kept in lock-step with Anchor.toml and the app's client fallbacks).
 declare_id!("GooHiyMEYnVAUkajiAc33fA9rQjF5K8ZvFojHNzhrShg");
 
 #[program]

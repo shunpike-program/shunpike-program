@@ -5,9 +5,8 @@ anchor_version = "0.31.1"
 resolution = true
 skip-lint = false
 
-# Placeholder id until the first `anchor keys sync` after the deploy keypair is
-# generated (P3). The same id is declared in programs/shunpike_stream/src/lib.rs —
-# keys sync rewrites both together.
+# The deployed program id — matches declare_id! in
+# programs/shunpike_stream/src/lib.rs and the deploy keypair.
 [programs.localnet]
 shunpike_stream = "GooHiyMEYnVAUkajiAc33fA9rQjF5K8ZvFojHNzhrShg"
 
