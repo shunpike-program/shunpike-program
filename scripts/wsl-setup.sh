@@ -43,4 +43,4 @@ rustc --version
 solana --version
 anchor --version
 
-echo "==> done. Next: cd to the repo (e.g. /mnt/c/Users/dkbut/source/repos/shunpike-program) && anchor build && cargo test"
+echo "==> done. Next: cd to the repo (under /mnt/c/... if it lives on Windows) && anchor build && cargo test"
