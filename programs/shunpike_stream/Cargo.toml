@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Shunpike streaming-payroll program: no fee machinery, refundable rent, narrow disclosed admin power"
 edition = "2021"
 license = "MIT"
-repository = "https://github.com/dkbutler/shunpike-program"
+repository = "https://github.com/shunpike-program/shunpike-program"
 
 [lib]
 crate-type = ["cdylib", "lib"]
