@@ -170,8 +170,9 @@ This is the oldest principle in this industry, restated. Hardware-wallet
 users can roll dice for their own entropy; almost nobody does — but the fact
 that anyone can is part of what disciplines the vendors. The point of Bitcoin
 was never that you had to self-custody. It was that you *can* — and that
-everyone holding your money knows it. Exit and verification do their work by
-existing, whether or not you personally use them.
+everyone holding your money knows it. Because users can always leave and
+anyone can always check, the people holding money have to behave — whether
+or not you personally ever do either.
 
 So this app does what an app honestly can: it makes the checks teachable,
 cheap, and always available, and it tells you plainly that the real risk —
