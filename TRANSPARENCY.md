@@ -157,6 +157,27 @@ picked a lane — code — and made every remaining human power narrow,
 disclosed, and provable on chain. This table is the only place Zebec is named
 in this repository; the program stands on its own.
 
+## Most of you will trust us instead of checking
+
+We know. The checks exist so that you never have to — and so that any one of
+you can catch us on behalf of all of you. A dishonest transaction is caught
+by whichever single user happens to verify it, and the proof is public and
+permanent. Fraud here is fraud in front of witnesses we cannot identify in
+advance. That is what protects the many who trust: not their own checks, but
+the existence of anyone's.
+
+This is the oldest principle in this industry, restated. Hardware-wallet
+users can roll dice for their own entropy; almost nobody does — but the fact
+that anyone can is part of what disciplines the vendors. The point of Bitcoin
+was never that you had to self-custody. It was that you *can* — and that
+everyone holding your money knows it. Exit and verification do their work by
+existing, whether or not you personally use them.
+
+So this app does what an app honestly can: it makes the checks teachable,
+cheap, and always available, and it tells you plainly that the real risk —
+here and everywhere in crypto — is not trusting. It is declining to learn
+enough to choose whom to trust, and how to trust less.
+
 ## Verify, don't trust
 
 1. Read the source (start at `programs/shunpike_stream/src/lib.rs` — it is
