@@ -6,9 +6,10 @@ failure case. Nothing here asks you to trust us. Every claim points at
 something you can check yourself: the source in this repository, the deployed
 bytecode, or an account on chain.
 
-> **Status note:** deployed and end-to-end verified on devnet (2026-08-18);
-> mainnet deploy pending. The addresses below are final — program ids and
-> PDAs are identical on both clusters because we deploy with the same keypair.
+> **Status note:** live on mainnet (2026-08-18) with a verified build — the
+> on-chain bytecode hash-matches this repository (see the explorer's
+> verified-build tab). The addresses below are identical on devnet and
+> mainnet because we deploy with the same keypair.
 
 ## The addresses
 
