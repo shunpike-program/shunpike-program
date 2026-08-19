@@ -107,7 +107,7 @@ considered them:
   contracts never change; an upgrade is a *new* deployment users opt into,
   and every old version runs forever.
 
-We chose the last, with one improvement our shape makes possible: because
+We chose the last, with one improvement our design makes possible: because
 every stream has exactly two named parties and one fixed settlement math,
 force-settle lets us return every balance from an old program automatically —
 an opt-in migration where opting costs users nothing. A payroll stream needs
@@ -147,7 +147,7 @@ taught us exactly what we wanted to do differently. Point by point:
 | **Fees** | ZBCN fee choreography stapled on by the vendor SDK at create time | No fee code exists |
 | **Rent** | Stream accounts are permanent; creation rent (~0.006 SOL/stream) is stranded forever | Every terminal path closes the accounts and refunds all rent to the funder |
 | **Pause semantics** | A stream ends at wall-clock end even while paused; pause/cancel then fail on-chain | Resume extends the end time by the pause length; ending-while-paused cannot happen |
-| **Custody shape** | The vendor's app deposits to an app-managed flow first | Wallet → per-stream vault → wallet; the program never holds funds outside a stream |
+| **Custody path** | The vendor's app deposits to an app-managed flow first | Wallet → per-stream vault → wallet; the program never holds funds outside a stream |
 
 The general point is what we call the worst-quadrant argument. A service
 whose operator retains god-mode over an opaque program gives users neither of
