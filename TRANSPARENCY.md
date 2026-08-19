@@ -87,6 +87,33 @@ deliberate, manual, publicly announced step. From then on the program is
 immutable. We do not promise a schedule, so you never have to trust one —
 `solana program show` tells you the current state any time.
 
+## Why immutability, and not governance
+
+The tension between upgradeable (maintainable, but someone holds the pen) and
+immutable (trustless, but unfixable) has known industry answers. We
+considered them:
+
+- **Multisig authority** (e.g. Squads, the Solana standard): upgrades need
+  M-of-N signers. This dilutes the single key into a committee — the trust
+  remains, spread thinner.
+- **DAO token voting**: a governance program holds the authority and token
+  holders vote on changes. This tokenizes the trust, and votes are a market —
+  Beanstalk was drained of $182M in 2022 by an attacker who flash-loaned a
+  voting majority, passed their own "upgrade," and exited in one transaction.
+- **Timelocks**: approved changes queue publicly for days before executing,
+  so users can always exit first. This time-bounds the trust; it does not
+  remove it.
+- **Immutable per version** — the model Uniswap proved at scale: core
+  contracts never change; an upgrade is a *new* deployment users opt into,
+  and every old version runs forever.
+
+We chose the last, with one improvement our shape makes possible: because
+every stream has exactly two named parties and one fixed settlement math,
+force-settle lets us return every balance from an old program automatically —
+an opt-in migration where opting costs users nothing. A payroll stream needs
+no governance token, and adding one would reintroduce the exact trust
+(holder politics, vote markets) this program exists to remove.
+
 ## The redeploy pledge
 
 If a critical problem ever surfaces after the burn:
