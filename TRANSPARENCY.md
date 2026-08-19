@@ -78,12 +78,13 @@ instead of trusting a deploy-time transaction.
 ## The immutability commitment
 
 The program launches with its upgrade authority intact and this is disclosed
-plainly: **during the testing window we technically can change the code.**
-That window exists so real production use can shake out defects while a fix
-is still cheap. After months of stable production operation we burn the
-upgrade authority in a deliberate, manual, publicly announced step. From then
-on the program is immutable. You do not have to take our word for the
-schedule — `solana program show` tells you the current state any time.
+plainly: **during the test phase we technically can change the code.** That
+phase exists so real production use can shake out defects while a fix is
+still cheap, and it has no fixed end date — it runs as long as testing
+honestly requires. When it ends, we burn the upgrade authority in a
+deliberate, manual, publicly announced step. From then on the program is
+immutable. We do not promise a schedule, so you never have to trust one —
+`solana program show` tells you the current state any time.
 
 ## The redeploy pledge
 
@@ -113,7 +114,7 @@ taught us exactly what we wanted to do differently. Point by point:
 
 | | Zebec's program | This program |
 | --- | --- | --- |
-| **Upgradeability** | Upgradeable by a single key, indefinitely | Authority burned after the proven-stability window; immutable after |
+| **Upgradeability** | Upgradeable by a single key, indefinitely | Authority burned when the disclosed test phase ends; immutable after |
 | **Source** | Closed (only the IDL is public) | Public, MIT-licensed, verified build hash-matched to the deployed bytecode |
 | **Fees** | ZBCN fee choreography stapled on by the vendor SDK at create time | No fee code exists |
 | **Rent** | Stream accounts are permanent; creation rent (~0.006 SOL/stream) is stranded forever | Every terminal path closes the accounts and refunds all rent to the funder |
