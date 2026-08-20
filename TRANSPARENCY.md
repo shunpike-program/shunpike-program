@@ -68,6 +68,25 @@ depends on it.
   the authority burn makes impossible.
 - After the burn, we cannot change the rules at all. Neither can anyone else.
 
+## What recipients should know
+
+The funder holds two controls over a live stream, and their exact reach
+matters to you as the payee:
+
+- **Withdrawn money is yours, unconditionally.** Nothing in this program can
+  claw back tokens that have landed in your wallet.
+- **Accrued-but-unwithdrawn money is not yet yours.** The funder can rotate
+  the stream's payee at any time (`change_recipient`) — that is a payroll
+  feature (fixing a mistyped address, replacing a contractor) — and whatever
+  has vested but was never withdrawn follows the stream to the NEW recipient.
+  A cancel is more protective of you than a rotation: cancel pays your accrued
+  share out to you as part of settlement; rotation does not.
+
+The practical advice is one line: **withdraw on whatever cadence you would
+want to be paid on.** A weekly withdrawal caps your exposure to one week of
+accrual. This is the streaming-payroll analogue of "an unpaid invoice is not
+money in the bank," and we would rather you read it here than discover it.
+
 ## The genesis admin is in the source
 
 `initialize_config` takes no admin argument. Whoever calls it first only pays
@@ -133,6 +152,39 @@ Force-settle dies. Nothing else changes. Users are never trapped: `withdraw`,
 `cancel`, and `close_stream` need only the user's own wallet and keep working
 for as long as Solana exists. The only casualty would be the redeploy
 pledge's automation — users would exit self-service instead.
+
+## Edge cases we disclose (found in review, 2026-08-19)
+
+Three quirks a careful reader would eventually find in the source. None moves
+money to us; all are disclosed here so nobody has to find them the hard way.
+The source is not being changed for these while the deployed program is
+hash-verified against this repository — a silent source edit would be worse
+than any of them.
+
+- **Freeze-authority tokens can jam settlement.** Some SPL tokens (USDC
+  included) have a freeze authority. If that authority freezes the stream's
+  vault or a party's token account, transfers out of or into it fail — so
+  withdraw/cancel/force-settle can fail while the freeze lasts. This is a
+  property of the TOKEN, not of this program (every Solana program that moves
+  such tokens inherits it), and only the token's issuer can freeze — we
+  cannot. If it matters to you, stream tokens without a freeze authority (any
+  explorer shows a mint's authorities).
+- **A frozen recipient token account can hold the funder's remainder hostage
+  — with an escape.** Cancel and force-settle pay BOTH parties in one
+  transaction, so a recipient account that cannot receive blocks the whole
+  settlement, including the funder's refund. The escape is the rotation
+  feature above: `change_recipient` to a working wallet, then cancel. Missing
+  accounts are NOT a problem (settlement creates them as needed —
+  `init_if_needed` in `settle.rs`); only a frozen or otherwise unreceivable
+  one is.
+- **`create_stream` accepts any recipient address; `change_recipient`
+  rejects the all-zeros one.** Inconsistent, and deliberate to leave as-is:
+  the funder chooses the recipient at create time and self-streams are banned
+  either way, so the all-zeros check at create would only guard against a
+  funder deliberately burning their own deposit into an unspendable address —
+  which they could do with any other unowned address too. The check exists on
+  rotation (error 6014) because a rotation TARGET is more plausibly a typo'd
+  variable defaulting to zero.
 
 ## The contrast that explains why this program exists
 
